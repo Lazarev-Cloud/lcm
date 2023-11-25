@@ -3,3 +3,4 @@ diffusers
 Pillow
 tqdm
 transformers
+accelerate
