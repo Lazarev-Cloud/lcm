@@ -47,7 +47,7 @@ To use this script, you need to have Python installed on your system, along with
 
 1. **Install Python**: Ensure that you have Python 3.6 or later installed. You can download it from [python.org](https://www.python.org/downloads/).
 
-2. **Clone the Repository**: Clone or download the repository containing the script to your local machine.
+2. **Clone the Repository**: Clone or download the repository containing the script to your local machine. (or just [download](https://github.com/Lazarev-Cloud/lcm/archive/refs/heads/main.zip) it and unzip)
 
 3. **Install Dependencies**: Open your terminal or command prompt and navigate to the script's directory. Install the required libraries using pip:
 
