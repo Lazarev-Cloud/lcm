@@ -52,7 +52,7 @@ To use this script, you need to have Python installed on your system, along with
 3. **Install Dependencies**: Open your terminal or command prompt and navigate to the script's directory. Install the required libraries using pip:
 
     ```bash
-    pip install torch tqdm Pillow diffusers
+    pip install torch tqdm Pillow diffusers transformers accelerate
     ```
 
 ## Requirements
