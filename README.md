@@ -1,10 +1,10 @@
-# Latent Consistency Model in terminal
+# Latent Consistency Model (LCM) — simple web and CLI
 
 Based on https://github.com/0xbitches/sd-webui-lcm
 
-Really simple implementation for batch image generation
+Really simple implementation for batch image generation, now with a minimal web UI and Docker-first workflow.
 
-# Text-to-Image Generation Script
+# Text-to-Image Generation
 
 This script is designed to generate images from text prompts using a text-to-image diffusion model. It allows users to input prompts and specify the number of images to generate, and then saves these images with relevant metadata.
 
@@ -26,12 +26,39 @@ This script leverages a state-of-the-art text-to-image diffusion model to genera
 
 
 
-## How to Use
+## Quick start (Docker)
 
-1. **Start the Script**: Run the script in your Python environment.
-2. **Enter Prompts**: When prompted, enter the text you wish to transform into an image.
-3. **Specify Image Quantity**: After entering a prompt, you'll be asked to specify the number of images you want to generate. If you don't specify a number, it will default to 1.
-4. **View Generated Images**: Images will be saved in a specified directory, complete with relevant metadata.
+CPU-only (works everywhere):
+
+```bash
+docker build -t lcm:cpu .
+docker run --rm -p 8000:8000 -v %cd%/outputs:/data lcm:cpu
+# Open http://localhost:8000
+```
+
+NVIDIA GPU (Windows/Linux with NVIDIA Container Toolkit):
+
+```bash
+docker build -t lcm:gpu --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121 .
+docker run --rm -p 8000:8000 --gpus all -v %cd%/outputs:/data lcm:gpu
+# Open http://localhost:8000
+```
+
+Environment overrides:
+
+```bash
+docker run --rm -p 8000:8000 -v %cd%/outputs:/data \
+  -e MODEL_ID=SimianLuo/LCM_Dreamshaper_v7 \
+  -e NUM_INFERENCE_STEPS=8 -e GUIDANCE_SCALE=30.0 -e LCM_ORIGIN_STEPS=8 \
+  -e SAFETY_CHECKER=default \
+  lcm:cpu
+```
+
+CLI mode (inside container):
+
+```bash
+docker run --rm -it -v %cd%/outputs:/data lcm:cpu python text2img.py
+```
 
 ---
 
@@ -41,19 +68,17 @@ Enjoy creating beautiful images with just a few keystrokes!
 
 ---
 
-## Installation
+## Local installation (optional)
 
-To use this script, you need to have Python installed on your system, along with several libraries. Here are the steps to set it up:
+If you prefer not to use Docker:
 
-1. **Install Python**: Ensure that you have Python 3.6 or later installed. You can download it from [python.org](https://www.python.org/downloads/).
-
-2. **Clone the Repository**: Clone or download the repository containing the script to your local machine. (or just [download](https://github.com/Lazarev-Cloud/lcm/archive/refs/heads/main.zip) it and unzip)
-
-3. **Install Dependencies**: Open your terminal or command prompt and navigate to the script's directory. Install the required libraries using pip:
-
-    ```bash
-    pip install torch tqdm Pillow diffusers transformers accelerate
-    ```
+```bash
+python -m venv .venv && .venv\Scripts\activate  # Windows PowerShell
+pip install --upgrade pip
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
 
 ## Requirements
 
@@ -65,12 +90,12 @@ The script requires the following libraries:
 
 Ensure your machine has CUDA support for GPU acceleration.
 
-## Usage
+## Web usage
 
-1. **Run the Script**: Execute the script in your Python environment.
-2. **Enter Prompts**: When prompted, enter the text you wish to turn into an image.
-3. **Specify Image Quantity**: Indicate how many images you want for each prompt. Defaults to 1 if unspecified.
-4. **View Generated Images**: Images will be saved in the `lcm_images_1` directory, complete with metadata.
+- Start the container (see Quick start)
+- Open `http://localhost:8000`
+- Enter your prompt, optionally tweak steps/guidance
+- Images are saved into the mapped host `outputs/` directory
 
 ## User Interaction
 
@@ -80,7 +105,7 @@ Ensure your machine has CUDA support for GPU acceleration.
 
 ## Output
 
-- Images are saved in the `lcm_images_1` directory.
+- Images are saved in the `outputs/` directory when running via Docker (mapped to container `/data`). In CLI mode without Docker, defaults to `lcm_images_1`.
 - Filenames contain the date, time, and a snippet of the prompt.
 - Metadata includes the original prompt and the number of inference steps.
 
@@ -104,5 +129,13 @@ pipe = DiffusionPipeline.from_pretrained("SimianLuo/LCM_Dreamshaper_v7", custom_
 ```
 
 By enabling the safety checker, you add an extra layer of content moderation to the image generation process.
+
+## Docker notes and hardening
+
+- Uses `python:3.10-slim` minimal base
+- Non-root user `appuser`
+- Healthcheck at `/healthz`
+- Caching optimized by installing dependencies before copying source
+- `.dockerignore` recommended for smaller builds
 
 ---
