@@ -12,6 +12,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TRANSFORMERS_CACHE=/home/appuser/.cache/huggingface/transformers \
     DIFFUSERS_CACHE=/home/appuser/.cache/huggingface/diffusers
 
+# OCI image metadata
+LABEL org.opencontainers.image.title="LCM Image Generator" \
+      org.opencontainers.image.description="FastAPI web UI and CLI for Latent Consistency Model (LCM) text-to-image generation. Supports CPU and NVIDIA GPU builds." \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/Lazarev-Cloud/lcm" \
+      org.opencontainers.image.url="https://github.com/Lazarev-Cloud/lcm" \
+      org.opencontainers.image.documentation="https://github.com/Lazarev-Cloud/lcm#readme"
+
 WORKDIR /app
 
 # Install minimal OS deps (for healthcheck) and create non-root user

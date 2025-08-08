@@ -144,7 +144,7 @@ This repo ships with GitHub Actions to:
 
 - Build and push Docker images to GHCR on pushes to `main` (`.github/workflows/docker-publish.yml`).
   - CPU image tags follow branch/tag; `latest` on default branch, plus a `gpu` tag for CUDA wheels.
-- Create GitHub Releases when pushing tags like `v1.0.0` (`.github/workflows/create-release.yml`).
+- Create GitHub Releases when pushing tags like `v1.0.0` (`.github/workflows/create-release.yml`). No nightly prereleases.
   - Uses GitHub’s automatic release notes.
 - Update release notes content on publish (`.github/workflows/release-notes.yml`).
 
@@ -154,6 +154,8 @@ After a `main` push, pull with:
 docker pull ghcr.io/<owner>/<repo>:latest
 docker pull ghcr.io/<owner>/<repo>:gpu
 ```
+
+Image metadata includes title, description, license and links to docs for better package visibility in GHCR.
 
 Make sure your repo visibility allows GHCR pulls, or authenticate: `docker login ghcr.io`.
 
