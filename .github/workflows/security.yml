@@ -47,7 +47,7 @@ jobs:
             TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
       - name: Trivy scan image (local docker)
         id: trivy
-        uses: aquasecurity/trivy-action@0.22.0
+        uses: aquasecurity/trivy-action@0.32.0
         with:
           image-ref: lcm:ci-scan
           severity: HIGH,CRITICAL
