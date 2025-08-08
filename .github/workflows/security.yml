@@ -41,10 +41,11 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: lcm:ci-scan
           build-args: |
             TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
-      - name: Trivy scan image
+      - name: Trivy scan image (local docker)
         id: trivy
         uses: aquasecurity/trivy-action@0.22.0
         with:
