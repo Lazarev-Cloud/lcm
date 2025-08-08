@@ -1,8 +1,8 @@
+# flake8: noqa
 import os
-import io
-import base64
 import threading
 import datetime
+import logging
 from typing import List, Optional
 
 import torch
@@ -12,6 +12,13 @@ from fastapi.staticfiles import StaticFiles
 from PIL import PngImagePlugin
 from diffusers import DiffusionPipeline
 
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger("lcm_app")
 
 app = FastAPI(title="LCM Text2Image")
 
@@ -47,6 +54,8 @@ def _create_pipeline() -> DiffusionPipeline:
     use_cuda = torch.cuda.is_available()
     torch_dtype = torch.float16 if use_cuda else torch.float32
 
+    logger.info("Initializing diffusion pipeline: model_id=%s, device=%s, dtype=%s, safety=%s",
+                MODEL_ID, "cuda" if use_cuda else "cpu", str(torch_dtype), "enabled" if SAFETY_CHECKER != "disabled" else "disabled")
     pipe = DiffusionPipeline.from_pretrained(
         MODEL_ID,
         custom_pipeline=LCM_CUSTOM_PIPELINE,
@@ -58,6 +67,7 @@ def _create_pipeline() -> DiffusionPipeline:
 
     device = "cuda" if use_cuda else "cpu"
     pipe = pipe.to(device)
+    logger.info("Pipeline ready on device=%s", device)
     return pipe
 
 
@@ -87,6 +97,7 @@ def _generate_filename(prompt: str, timestamp: str, index: int) -> str:
 def _on_startup():
     # Optionally preload model to avoid first-request latency
     if PRELOAD_MODEL:
+        logger.info("Preloading model on startup")
         _get_pipeline()
 
 
@@ -157,17 +168,17 @@ INDEX_HTML = """
         </div>
         <div>
           <label>Steps</label>
-          <input type=\"number\" name=\"num_inference_steps\" min=\"1\" max=\"20\" value=\""" + str(DEFAULT_STEPS) + """ />
+          <input type=\"number\" name=\"num_inference_steps\" min=\"1\" max=\"20\" value=\"{DEFAULT_STEPS}\" />
         </div>
         <div>
           <label>Guidance</label>
-          <input type=\"number\" step=\"0.5\" name=\"guidance_scale\" value=\""" + str(DEFAULT_GUIDANCE) + """ />
+          <input type=\"number\" step=\"0.5\" name=\"guidance_scale\" value=\"{DEFAULT_GUIDANCE}\" />
         </div>
       </div>
       <div class=\"row\">
         <div>
           <label>LCM Origin Steps</label>
-          <input type=\"number\" name=\"lcm_origin_steps\" min=\"1\" max=\"20\" value=\""" + str(DEFAULT_LCM_ORIGIN_STEPS) + """ />
+          <input type=\"number\" name=\"lcm_origin_steps\" min=\"1\" max=\"20\" value=\"{DEFAULT_LCM_ORIGIN_STEPS}\" />
         </div>
       </div>
       <button id=\"go\" type=\"submit\">Generate</button>
@@ -181,7 +192,13 @@ INDEX_HTML = """
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return HTMLResponse(INDEX_HTML)
+    html = (
+        INDEX_HTML
+        .replace("{DEFAULT_STEPS}", str(DEFAULT_STEPS))
+        .replace("{DEFAULT_GUIDANCE}", str(DEFAULT_GUIDANCE))
+        .replace("{DEFAULT_LCM_ORIGIN_STEPS}", str(DEFAULT_LCM_ORIGIN_STEPS))
+    )
+    return HTMLResponse(html)
 
 
 @app.post("/api/generate")
@@ -199,6 +216,8 @@ def api_generate(
     guidance = guidance_scale or DEFAULT_GUIDANCE
     origin_steps = lcm_origin_steps or DEFAULT_LCM_ORIGIN_STEPS
 
+    logger.info("Generation request: prompt=%r, num_images=%s, steps=%s, guidance=%s, origin_steps=%s",
+                prompt[:80], num_images, steps, guidance, origin_steps)
     try:
         pipe = _get_pipeline()
         images = pipe(
@@ -206,9 +225,11 @@ def api_generate(
             num_inference_steps=steps,
             guidance_scale=guidance,
             lcm_origin_steps=origin_steps,
+            num_images_per_prompt=max(1, num_images),
             output_type="pil",
         ).images
     except Exception as e:
+        logger.exception("Generation failed: %s", e)
         raise HTTPException(status_code=500, detail=f"Generation failed: {e}")
 
     ts = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
@@ -221,13 +242,14 @@ def api_generate(
         try:
             _save_image(image, filepath, metadata)
         except Exception as e:
+            logger.exception("Failed to save image: %s", e)
             raise HTTPException(status_code=500, detail=f"Failed to save image: {e}")
         files.append({
             "name": filename,
             "path": filepath,
             "url": f"/outputs/{filename}",
         })
-
+    logger.info("Generated %d images", len(files))
     return JSONResponse({"files": files})
 
 

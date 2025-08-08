@@ -138,4 +138,23 @@ By enabling the safety checker, you add an extra layer of content moderation to 
 - Caching optimized by installing dependencies before copying source
 - `.dockerignore` recommended for smaller builds
 
+## GitHub Actions and Releases
+
+This repo ships with GitHub Actions to:
+
+- Build and push Docker images to GHCR on pushes to `main` (`.github/workflows/docker-publish.yml`).
+  - CPU image tags follow branch/tag; `latest` on default branch, plus a `gpu` tag for CUDA wheels.
+- Create GitHub Releases when pushing tags like `v1.0.0` (`.github/workflows/create-release.yml`).
+  - Uses GitHub’s automatic release notes.
+- Update release notes content on publish (`.github/workflows/release-notes.yml`).
+
+After a `main` push, pull with:
+
+```bash
+docker pull ghcr.io/<owner>/<repo>:latest
+docker pull ghcr.io/<owner>/<repo>:gpu
+```
+
+Make sure your repo visibility allows GHCR pulls, or authenticate: `docker login ghcr.io`.
+
 ---

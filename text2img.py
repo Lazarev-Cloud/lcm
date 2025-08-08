@@ -1,5 +1,8 @@
+# flake8: noqa
 import os
 import datetime
+import logging
+
 import torch
 from tqdm import tqdm
 from PIL import PngImagePlugin
@@ -29,11 +32,17 @@ default_guidance = float(os.getenv("GUIDANCE_SCALE", "30.0"))
 default_lcm_origin_steps = int(os.getenv("LCM_ORIGIN_STEPS", "8"))
 safety_checker = os.getenv("SAFETY_CHECKER", "disabled").lower()  # "disabled" or "default"
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO),
+                    format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logger = logging.getLogger("lcm_cli")
+
 os.makedirs(save_path, exist_ok=True)
 
 args = {} if safety_checker != "disabled" else {"safety_checker": None}
 
 # Initialize the pipeline
+logger.info("Initializing diffusion pipeline: model_id=%s", model_id)
 pipe = DiffusionPipeline.from_pretrained(
     model_id,
     custom_pipeline=lcm_custom_pipeline,
@@ -45,7 +54,7 @@ pipe = DiffusionPipeline.from_pretrained(
 # Check if CUDA (GPU support) is available, else use CPU
 device = "cuda" if torch.cuda.is_available() else "cpu"
 torch_dtype = torch.float16 if device == "cuda" else None
-print(f"Using device: {device}")
+logger.info("Using device: %s; dtype: %s", device, str(torch_dtype))
 
 # Set the device and dtype for the pipeline
 pipe.to(torch_device=device, torch_dtype=torch_dtype)
@@ -77,7 +86,7 @@ while True:
                 output_type="pil",
             ).images
         except Exception as e:
-            print(f"Error generating image: {e}")
+            logger.exception("Error generating image: %s", e)
             continue
 
         metadata = {"prompt": prompt, "num_steps": num_inference_steps}
@@ -88,6 +97,6 @@ while True:
             output_path = os.path.join(save_path, filename)
             save_image(image, output_path, metadata)
 
-    print(f"Images saved to {save_path}")
+    logger.info("Images saved to %s", save_path)
 
-print("Image generation completed.")
+logger.info("Image generation completed.")
