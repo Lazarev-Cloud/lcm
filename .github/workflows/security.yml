@@ -13,8 +13,8 @@ jobs:
     name: Python dependency audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5
         with:
           python-version: '3.10'
       - name: Install deps
@@ -44,7 +44,7 @@ jobs:
           build-args: |
             TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
       - name: Trivy scan image
-        uses: aquasecurity/trivy-action@0.22.0
+        uses: aquasecurity/trivy-action@9ab158e8597f3b310480b9a69402b419bc03dbd5 # 0.22.0
         with:
           image-ref: lcm:ci-scan
           severity: HIGH,CRITICAL
@@ -52,7 +52,7 @@ jobs:
           format: sarif
           output: trivy-results.sarif
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@b611370bb5703a7efb587f9d136a52ea24c5c38a # v3
         with:
           sarif_file: trivy-results.sarif
 

@@ -42,8 +42,7 @@ USER appuser
 
 # Optional: pre-download model weights to warm cache (increases image size)
 ARG PRELOAD_MODEL=0
-RUN if [ "$PRELOAD_MODEL" = "1" ]; then \
-    python - <<'PY' \
+RUN test "$PRELOAD_MODEL" != "1" || python - <<'PY'
 import os
 import torch
 from diffusers import DiffusionPipeline
@@ -54,10 +53,16 @@ custom_pipeline = os.getenv('LCM_CUSTOM_PIPELINE')
 custom_revision = os.getenv('LCM_CUSTOM_REVISION')
 
 dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-_ = DiffusionPipeline.from_pretrained(model_id, custom_pipeline=custom_pipeline, custom_revision=custom_revision, revision=revision, torch_dtype=dtype, safety_checker=None)
+_ = DiffusionPipeline.from_pretrained(
+    model_id,
+    custom_pipeline=custom_pipeline,
+    custom_revision=custom_revision,
+    revision=revision,
+    torch_dtype=dtype,
+    safety_checker=None,
+)
 print('Model cached')
 PY
-    ; fi
 
 EXPOSE 8000
 
