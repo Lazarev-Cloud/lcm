@@ -1,7 +1,7 @@
 diffusers==0.29.2
 transformers==4.53.0
 accelerate==0.31.0
-Pillow==10.4.0
+Pillow==11.3.0
 tqdm==4.66.4
 fastapi==0.116.1
 uvicorn[standard]==0.30.1
