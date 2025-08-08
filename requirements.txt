@@ -1,4 +1,4 @@
-diffusers==0.29.2
+diffusers==0.34.0
 transformers==4.53.0
 accelerate==0.31.0
 Pillow==10.4.0
