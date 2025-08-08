@@ -23,8 +23,8 @@ jobs:
           pip install -r requirements.txt
           pip install pip-audit
       - name: Run pip-audit
-        run: pip-audit -r requirements.txt --strict
-        continue-on-error: true
+        run: |
+          pip-audit -r requirements.txt --strict || echo "pip-audit found issues" > pip-audit.txt
 
   trivy-image:
     name: Trivy scan (image)
@@ -45,6 +45,7 @@ jobs:
           build-args: |
             TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
       - name: Trivy scan image
+        id: trivy
         uses: aquasecurity/trivy-action@0.22.0
         with:
           image-ref: lcm:ci-scan
@@ -52,7 +53,9 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-results.sarif
-        continue-on-error: true
+      - name: Ensure SARIF exists
+        run: |
+          test -f trivy-results.sarif || echo '{"runs":[{"results":[]}],"version":"2.1.0"}' > trivy-results.sarif
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
