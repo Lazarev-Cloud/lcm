@@ -17,6 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
+      - name: Derive lowercase repo for GHCR
+        id: repo
+        run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Log in to GHCR
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3
         with:
@@ -28,7 +32,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ env.REPO_LOWER }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -53,7 +57,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:gpu
+          tags: ghcr.io/${{ env.REPO_LOWER }}:gpu
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121
