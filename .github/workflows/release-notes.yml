@@ -21,7 +21,7 @@ jobs:
         run: |
           bash scripts/generate_release_notes.sh > RELEASE_NOTES.md
       - name: Update Release body
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
